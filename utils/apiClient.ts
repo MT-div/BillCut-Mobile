@@ -1,10 +1,6 @@
 import axios from "axios";
-
-// هنا نضع عنوان السيرفر الخاص بـ Django.
-// ملاحظة: إذا كنت تختبر على هاتف حقيقي (أو محاكي)، فإن 127.0.0.1 لن يعمل!
-// يجب أن تضع عنوان الـ IP الخاص بجهاز الكمبيوتر على الشبكة (مثال: 192.168.1.10)
-// سنضع الآن عنواناً افتراضياً وسأعلمك كيف تستخرجه لاحقاً.
-
+import * as SecureStore from "expo-secure-store";
+// تذكر: تأكد من أن الـ IP هو الخاص بجهازك
 const BASE_URL = "http://192.168.98.50:8000/api/v1";
 
 export const apiClient = axios.create({
@@ -14,9 +10,39 @@ export const apiClient = axios.create({
   },
 });
 
+// ==========================================
+// مُعترض الطلبات (Request Interceptor)
+// ==========================================
+// هذه الدالة السحرية تعمل تلقائياً قبل خروج أي طلب من الموبايل
+apiClient.interceptors.request.use(
+  async (config) => {
+    // 1. نبحث عن المفتاح في خزنة الهاتف
+    const token = await SecureStore.getItemAsync("access_token");
+
+    // 2. إذا وجدناه، نرفقه في ترويسة الطلب (Headers)
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// ==========================================
 // دوال الاتصال بالسيرفر (API Calls)
-export const fetchPrediction = async (meterId: any) => {
-  // هذه الدالة تطلب الرابط: GET /api/v1/predict/12345/
+// ==========================================
+
+// دالة تسجيل الدخول (جديدة)
+export const loginUser = async (username: any, password: any) => {
+  // هذه تطلب الرابط الذي أنشأناه في جانغو لإصدار الـ Token
+  const response = await apiClient.post("/auth/login/", { username, password });
+  return response.data; // سترجع لنا access و refresh tokens
+};
+
+// دالة التنبؤ (القديمة)
+export const fetchPrediction = async (meterId: string) => {
   const response = await apiClient.get(`/predict/${meterId}/`);
   return response.data;
 };
