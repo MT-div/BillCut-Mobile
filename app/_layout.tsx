@@ -1,11 +1,17 @@
-import React, { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter, useSegments } from "expo-router";
+import React, { useEffect } from "react";
+import { ActivityIndicator, I18nManager, View } from "react-native";
 import { AuthProvider, useAuth } from "../context/AuthContext";
-import { View, ActivityIndicator } from "react-native";
+import { MeterProvider } from "../context/MeterContext";
 
 const queryClient = new QueryClient();
 
+// 2. الكود السحري لقلب التطبيق بالكامل ليصبح من اليمين لليسار (RTL)
+if (!I18nManager.isRTL) {
+  I18nManager.allowRTL(true);
+  I18nManager.forceRTL(true);
+}
 // هذا هو "الحارس الشخصي" الذي يراقب التنقلات
 function AuthGuard() {
   const { userToken, isLoading } = useAuth();
@@ -47,9 +53,11 @@ export default function RootLayout() {
   return (
     // نغلف التطبيق بمركز المصادقة أولاً، ثم بالموزع، ثم نشغل الحارس
     <AuthProvider>
-      <QueryClientProvider client={queryClient}>
-        <AuthGuard />
-      </QueryClientProvider>
+      <MeterProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthGuard />
+        </QueryClientProvider>
+      </MeterProvider>
     </AuthProvider>
   );
 }

@@ -1,17 +1,18 @@
+import { useQuery } from "@tanstack/react-query";
 import React from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
   ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
-import { useQuery } from "@tanstack/react-query";
+import { useMeter } from "../../context/MeterContext"; // 1. استيراد المركز
 import { fetchNotifications } from "../../utils/apiClient";
 
 export default function NotificationsScreen() {
   // استخدم نفس رقم العداد الذي تستخدمه في الداشبورد
-  const METER_ID = "12345";
+  const { selectedMeterId } = useMeter();
 
   const {
     data: notifications,
@@ -19,8 +20,9 @@ export default function NotificationsScreen() {
     isError,
     refetch,
   } = useQuery({
-    queryKey: ["notifications", METER_ID],
-    queryFn: () => fetchNotifications(METER_ID),
+    queryKey: ["notifications", selectedMeterId],
+    queryFn: () => fetchNotifications(selectedMeterId),
+    enabled: !!selectedMeterId, // 3. لا تطلب حتى يتحدد العداد
   });
 
   // دالة صغيرة لتنسيق شكل التاريخ
@@ -34,6 +36,15 @@ export default function NotificationsScreen() {
     };
     return new Date(dateString).toLocaleDateString("ar-EG", options);
   };
+
+  // حالة جديدة: إذا لم يتم تحديد عداد بعد
+  if (!selectedMeterId) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color="#2563eb" />
+      </View>
+    );
+  }
 
   // حالة التحميل
   if (isLoading) {

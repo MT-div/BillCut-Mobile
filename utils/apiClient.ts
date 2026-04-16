@@ -1,7 +1,7 @@
 import axios from "axios";
 import * as SecureStore from "expo-secure-store";
 // تذكر: تأكد من أن الـ IP هو الخاص بجهازك
-const BASE_URL = "http://192.168.98.50:8000/api/v1";
+const BASE_URL = "http://192.168.1.103:8000/api/v1";
 
 export const apiClient = axios.create({
   baseURL: BASE_URL,
@@ -51,4 +51,10 @@ export const fetchPrediction = async (meterId: string) => {
 export const fetchNotifications = async (meterId: string) => {
   const response = await apiClient.get(`/notifications/${meterId}/`);
   return response.data; // سترجع لنا قائمة بالإشعارات
+};
+
+// دالة جلب قائمة عدادات المستخدم (جديدة)
+export const fetchUserMeters = async () => {
+  const response = await apiClient.get("/meters/");
+  return response.data;
 };

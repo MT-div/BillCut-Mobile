@@ -1,23 +1,54 @@
+import { useQuery } from "@tanstack/react-query";
 import React from "react";
 import {
-  View,
-  Text,
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
-  ActivityIndicator,
+  Text,
+  View,
 } from "react-native";
-import { useQuery } from "@tanstack/react-query";
+import { useMeter } from "../../context/MeterContext"; // 1. استيراد المركز
 import { fetchPrediction } from "../../utils/apiClient";
 
 export default function DashboardScreen() {
-  // 1. ضع هنا رقم العداد الحقيقي (meter_id) الذي أنشأته في لوحة تحكم جانغو
-  const METER_ID = "12345";
+  const { selectedMeterId } = useMeter(); // 2. جلب رقم العداد المحدد
 
-  // 2. استخدام React Query لجلب البيانات
+  // 3. استخدام React Query لجلب البيانات
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["prediction", METER_ID],
-    queryFn: () => fetchPrediction(METER_ID),
+    queryKey: ["prediction", selectedMeterId], // 3. نربط المفتاح برقم العداد ليحدث نفسه عند التغيير
+    queryFn: () => fetchPrediction(selectedMeterId),
+    enabled: !!selectedMeterId, // 4. كود احترافي: لا تطلب بيانات إذا لم يكن هناك عداد محدد بعد!
   });
+
+  // 5. حالة ذكية: إذا لم يتم تحديد عداد (إما لأنه لا يوجد عدادات، أو فشل الجلب)
+  if (!selectedMeterId) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <Text
+          style={{
+            fontSize: 22,
+            fontWeight: "bold",
+            color: "#1f2937",
+            marginBottom: 10,
+          }}
+        >
+          لم يتم تحديد عداد ⚡
+        </Text>
+        <Text
+          style={{
+            color: "#6b7280",
+            textAlign: "center",
+            paddingHorizontal: 40,
+            lineHeight: 24,
+          }}
+        >
+          الرجاء الانتقال إلى شاشة العدادات من الشريط السفلي لاختيار العداد
+          الخاص بك لكي نعرض بياناته هنا.
+        </Text>
+      </View>
+    );
+  }
+
   // 3. حالة التحميل (Loading State)
   if (isLoading) {
     return (
