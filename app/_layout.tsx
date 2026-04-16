@@ -20,7 +20,7 @@ function AuthGuard() {
 
     if (!userToken && !inAuthScreen) {
       // 1. لا يملك مفتاح + يحاول فتح الداشبورد = اطرده لصفحة الدخول
-      router.replace("./login");
+      router.replace("/login");
     } else if (userToken && inAuthScreen) {
       // 2. يملك مفتاح + يحاول فتح صفحة الدخول = وجهه فوراً للداشبورد
       router.replace("/(tabs)");
