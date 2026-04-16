@@ -46,3 +46,9 @@ export const fetchPrediction = async (meterId: string) => {
   const response = await apiClient.get(`/predict/${meterId}/`);
   return response.data;
 };
+
+// دالة جلب الإشعارات (جديدة)
+export const fetchNotifications = async (meterId: string) => {
+  const response = await apiClient.get(`/notifications/${meterId}/`);
+  return response.data; // سترجع لنا قائمة بالإشعارات
+};
