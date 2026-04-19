@@ -207,12 +207,11 @@ const styles = StyleSheet.create({
   centered: { justifyContent: "center", alignItems: "center" },
   scrollContent: { padding: 20, paddingTop: 60, paddingBottom: 40 },
   header: { marginBottom: 24 },
-  welcomeText: { fontSize: 18, color: "#6b7280", textAlign: "left" },
+  welcomeText: { fontSize: 18, color: "#6b7280" },
   titleText: {
     fontSize: 32,
     fontWeight: "bold",
     color: "#1f2937",
-    textAlign: "left",
     marginTop: 4,
   },
   mainCard: {
