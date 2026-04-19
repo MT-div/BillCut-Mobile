@@ -1,3 +1,4 @@
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import React from "react";
 import {
@@ -5,89 +6,74 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
-import { useMeter } from "../../context/MeterContext"; // 1. استيراد المركز
+import { useMeter } from "../../context/MeterContext";
 import { fetchPrediction } from "../../utils/apiClient";
 
 export default function DashboardScreen() {
-  const { selectedMeterId } = useMeter(); // 2. جلب رقم العداد المحدد
+  const { selectedMeterId } = useMeter();
 
-  // 3. استخدام React Query لجلب البيانات
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["prediction", selectedMeterId], // 3. نربط المفتاح برقم العداد ليحدث نفسه عند التغيير
+    queryKey: ["prediction", selectedMeterId],
     queryFn: () => fetchPrediction(selectedMeterId),
-    enabled: !!selectedMeterId, // 4. كود احترافي: لا تطلب بيانات إذا لم يكن هناك عداد محدد بعد!
+    enabled: !!selectedMeterId,
   });
 
-  // 5. حالة ذكية: إذا لم يتم تحديد عداد (إما لأنه لا يوجد عدادات، أو فشل الجلب)
   if (!selectedMeterId) {
     return (
       <View style={[styles.container, styles.centered]}>
-        <Text
-          style={{
-            fontSize: 22,
-            fontWeight: "bold",
-            color: "#1f2937",
-            marginBottom: 10,
-          }}
-        >
-          لم يتم تحديد عداد ⚡
-        </Text>
-        <Text
-          style={{
-            color: "#6b7280",
-            textAlign: "center",
-            paddingHorizontal: 40,
-            lineHeight: 24,
-          }}
-        >
-          الرجاء الانتقال إلى شاشة العدادات من الشريط السفلي لاختيار العداد
-          الخاص بك لكي نعرض بياناته هنا.
+        <View style={styles.stateIconCircle}>
+          <MaterialCommunityIcons
+            name="power-plug-off"
+            size={48}
+            color="#94a3b8"
+          />
+        </View>
+        <Text style={styles.stateTitle}>لم تحدد عداداً بعد!</Text>
+        <Text style={styles.stateSubtitle}>
+          يرجى الانتقال إلى شاشة العدادات واختيار العداد لنتمكن من عرض توقعات
+          استهلاكك.
         </Text>
       </View>
     );
   }
 
-  // 3. حالة التحميل (Loading State)
   if (isLoading) {
     return (
       <View style={[styles.container, styles.centered]}>
-        <ActivityIndicator size="large" color="#2563eb" />
-        <Text style={{ marginTop: 10, color: "#6b7280" }}>
-          جاري حساب توقعات الفاتورة...
-        </Text>
+        <View style={styles.loadingCircle}>
+          <ActivityIndicator size="large" color="#2563eb" />
+        </View>
+        <Text style={styles.loadingText}>نحسب استهلاكك بدقة...</Text>
       </View>
     );
   }
 
-  // 4. حالة الخطأ (Error State)
   if (isError || !data) {
-    console.log("API Error:", error); // طباعة الخطأ في التيرمينال
-
     return (
       <View style={[styles.container, styles.centered]}>
-        <Text style={{ color: "#ef4444", fontSize: 18, marginBottom: 10 }}>
-          ⚠️ عذراً، فشل الاتصال بالخادم
+        <View style={[styles.stateIconCircle, { backgroundColor: "#fee2e2" }]}>
+          <Ionicons name="cloud-offline-outline" size={48} color="#ef4444" />
+        </View>
+        <Text style={styles.stateTitle}>عذراً، انقطع الاتصال!</Text>
+        <Text style={styles.stateSubtitle}>
+          {error ? error.message : "تعذر جلب البيانات في الوقت الحالي."}
         </Text>
-        <Text
-          style={{ color: "#ef4444", marginBottom: 20, textAlign: "center" }}
-        >
-          السبب: {error ? error.message : "بيانات فارغة"}
-        </Text>
-
-        <Text
-          style={{ color: "#2563eb", fontWeight: "bold" }}
+        <TouchableOpacity
+          style={styles.retryButton}
           onPress={() => refetch()}
+          activeOpacity={0.8}
         >
-          اضغط هنا لإعادة المحاولة
-        </Text>
+          <Ionicons name="refresh" size={20} color="#ffffff" />
+          <Text style={styles.retryButtonText}>تحديث الصفحة</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
-  // 5. البيانات الحقيقية من السيرفر
-  const prediction = data.prediction; // أخذنا قسم التنبؤ من الـ JSON المردود
+  const prediction = data.prediction;
   const meterName = data.meter_name;
 
   const subsidizedProgress = Math.min(
@@ -107,33 +93,59 @@ export default function DashboardScreen() {
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
     >
       {/* الترحيب */}
       <View style={styles.header}>
-        <Text style={styles.welcomeText}>مرحباً بك،</Text>
-        <Text style={styles.titleText}>{meterName} ⚡</Text>
+        <View>
+          <Text style={styles.titleText}>{meterName}</Text>
+        </View>
+        <View style={styles.headerIconBg}>
+          <MaterialCommunityIcons
+            name="lightning-bolt-circle"
+            size={32}
+            color="#2563eb"
+          />
+        </View>
       </View>
 
       {/* البطاقة الرئيسية */}
       <View style={styles.mainCard}>
-        <Text style={styles.mainCardTitle}>
-          الفاتورة المتوقعة (للدورة كاملة)
-        </Text>
+        <View style={styles.mainCardTop}>
+          <Text style={styles.mainCardTitle}>
+            الفاتورة المتوقعة بنهاية الدورة
+          </Text>
+          <MaterialCommunityIcons
+            name="calculator-variant-outline"
+            size={24}
+            color="#dbeafe"
+          />
+        </View>
         <Text style={styles.mainCardPrice}>
-          {prediction.predicted_cost_syp.toLocaleString()} ل.س
+          {prediction.predicted_cost_syp.toLocaleString()}{" "}
+          <Text style={styles.currencyText}>ل.س</Text>
         </Text>
 
         <View style={styles.innerCard}>
-          <Text style={styles.innerCardText}>الاستهلاك المتوقع:</Text>
+          <View style={styles.innerCardRow}>
+            <Ionicons name="analytics-outline" size={18} color="#93c5fd" />
+            <Text style={styles.innerCardText}>
+              الاستهلاك الإجمالي المتوقع:
+            </Text>
+          </View>
           <Text style={styles.innerCardValue}>
             {prediction.expected_cycle_kwh} kWh
           </Text>
         </View>
       </View>
 
-      {/* البطاقة الثانية */}
+      {/* بطاقة مراقبة الاستهلاك */}
       <View style={styles.secondaryCard}>
-        <Text style={styles.cardHeader}>مراقبة الاستهلاك الحالي</Text>
+        <View style={styles.cardHeaderRow}>
+          <Text style={styles.cardHeader}>مراقبة الاستهلاك الحالي</Text>
+          <Ionicons name="speedometer-outline" size={22} color="#1f2937" />
+        </View>
+
         <Text style={styles.subText}>
           استهلكت حتى الآن:{" "}
           <Text style={styles.boldBlue}>
@@ -142,56 +154,73 @@ export default function DashboardScreen() {
         </Text>
 
         {/* شريط الشريحة المدعومة */}
-        <View style={styles.progressRow}>
-          <Text style={styles.progressLabel}>المدعوم (300 kWh)</Text>
-          <Text style={styles.progressLimit}>
-            {prediction.subsidized_daily_avg_limit} kWh/يوم مسموح
-          </Text>
-        </View>
-        <View style={styles.progressBarBackground}>
-          <View
-            style={[
-              styles.progressBarFill,
-              { width: `${subsidizedProgress}%`, backgroundColor: "#22c55e" },
-            ]}
-          />
+        <View style={styles.progressContainer}>
+          <View style={styles.progressRow}>
+            <Text style={styles.progressLabel}>الشريحة المدعومة (300 kWh)</Text>
+            <Text style={styles.progressLimit}>
+              {prediction.subsidized_daily_avg_limit} kWh/يوم
+            </Text>
+          </View>
+          <View style={styles.progressBarBackground}>
+            <View
+              style={[
+                styles.progressBarFill,
+                { width: `${subsidizedProgress}%`, backgroundColor: "#10b981" },
+              ]}
+            />
+          </View>
         </View>
 
         {/* شريط الميزانية */}
         {prediction.budget_info?.custom_budget_syp && (
-          <>
-            <View style={[styles.progressRow, { marginTop: 20 }]}>
+          <View style={[styles.progressContainer, { marginTop: 24 }]}>
+            <View style={styles.progressRow}>
               <Text style={styles.progressLabel}>
-                ميزانيتك (
+                ميزانيتك المخصصة (
                 {prediction.budget_info.custom_budget_syp.toLocaleString()} ل.س)
               </Text>
-              <Text style={[styles.progressLimit, { color: "#f97316" }]}>
-                {prediction.budget_info.budget_daily_avg_limit} kWh/يوم مسموح
+              <Text style={[styles.progressLimit, { color: "#f59e0b" }]}>
+                {prediction.budget_info.budget_daily_avg_limit} kWh/يوم
               </Text>
             </View>
             <View style={styles.progressBarBackground}>
               <View
                 style={[
                   styles.progressBarFill,
-                  { width: `${budgetProgress}%`, backgroundColor: "#f97316" },
+                  { width: `${budgetProgress}%`, backgroundColor: "#f59e0b" },
                 ]}
               />
             </View>
-          </>
+          </View>
         )}
       </View>
 
       {/* معلومات الدورة */}
       <View style={styles.cycleInfoCard}>
         <View style={styles.cycleColumn}>
+          <MaterialCommunityIcons
+            name="calendar-clock-outline"
+            size={24}
+            color="#64748b"
+            style={styles.cycleIcon}
+          />
           <Text style={styles.cycleLabel}>مضى من الدورة</Text>
-          <Text style={styles.cycleValue}>{prediction.days_passed} أيام</Text>
+          <Text style={styles.cycleValue}>
+            {prediction.days_passed} <Text style={styles.cycleUnit}>أيام</Text>
+          </Text>
         </View>
         <View style={styles.divider} />
         <View style={styles.cycleColumn}>
-          <Text style={styles.cycleLabel}>المتبقي</Text>
+          <MaterialCommunityIcons
+            name="calendar-check-outline"
+            size={24}
+            color="#2563eb"
+            style={styles.cycleIcon}
+          />
+          <Text style={styles.cycleLabel}>الأيام المتبقية</Text>
           <Text style={[styles.cycleValue, { color: "#2563eb" }]}>
-            {prediction.days_remaining} يوم
+            {prediction.days_remaining}{" "}
+            <Text style={styles.cycleUnit}>يوم</Text>
           </Text>
         </View>
       </View>
@@ -199,97 +228,160 @@ export default function DashboardScreen() {
   );
 }
 
-// ==========================================
-// التنسيقات (Native React Native StyleSheet)
-// ==========================================
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
-  centered: { justifyContent: "center", alignItems: "center" },
-  scrollContent: { padding: 20, paddingTop: 60, paddingBottom: 40 },
-  header: { marginBottom: 24 },
-  welcomeText: { fontSize: 18, color: "#6b7280" },
-  titleText: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#1f2937",
-    marginTop: 4,
+  container: { flex: 1, backgroundColor: "#f8fafc" },
+  centered: { justifyContent: "center", alignItems: "center", padding: 20 },
+  scrollContent: { padding: 24, paddingTop: 60, paddingBottom: 40 },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 28,
   },
+  welcomeText: {
+    fontSize: 16,
+    color: "#64748b",
+    marginBottom: 4,
+    fontFamily: "System",
+  },
+  titleText: { fontSize: 28, fontWeight: "800", color: "#0f172a" },
+  headerIconBg: { backgroundColor: "#eff6ff", padding: 12, borderRadius: 16 },
+
+  // Empty & Error States
+  stateIconCircle: {
+    backgroundColor: "#f1f5f9",
+    padding: 24,
+    borderRadius: 100,
+    marginBottom: 16,
+  },
+  stateTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#0f172a",
+    marginBottom: 8,
+  },
+  stateSubtitle: {
+    fontSize: 15,
+    color: "#64748b",
+    textAlign: "center",
+    lineHeight: 24,
+    paddingHorizontal: 20,
+  },
+  loadingCircle: {
+    backgroundColor: "#eff6ff",
+    padding: 20,
+    borderRadius: 100,
+    marginBottom: 16,
+  },
+  loadingText: { fontSize: 16, color: "#64748b", fontWeight: "500" },
+  retryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#2563eb",
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    marginTop: 24,
+    gap: 8,
+  },
+  retryButtonText: { color: "#ffffff", fontSize: 16, fontWeight: "bold" },
+
+  // Cards
   mainCard: {
     backgroundColor: "#2563eb",
     borderRadius: 24,
     padding: 24,
     marginBottom: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 5,
+    shadowColor: "#2563eb",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  mainCardTitle: {
-    color: "#dbeafe",
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 8,
-  },
-  mainCardPrice: {
-    color: "#ffffff",
-    fontSize: 36,
-    fontWeight: "bold",
-    marginBottom: 16,
-  },
-  innerCard: {
-    backgroundColor: "rgba(30, 64, 175, 0.3)",
-    borderRadius: 12,
-    padding: 12,
+  mainCardTop: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
   },
-  innerCardText: { color: "#dbeafe" },
-  innerCardValue: { color: "#ffffff", fontWeight: "bold" },
+  mainCardTitle: { color: "#bfdbfe", fontSize: 15, fontWeight: "600" },
+  mainCardPrice: {
+    color: "#ffffff",
+    fontSize: 38,
+    fontWeight: "800",
+    marginBottom: 24,
+  },
+  currencyText: { fontSize: 18, fontWeight: "500", color: "#dbeafe" },
+  innerCard: {
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  innerCardRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  innerCardText: { color: "#dbeafe", fontSize: 14, fontWeight: "500" },
+  innerCardValue: { color: "#ffffff", fontWeight: "bold", fontSize: 16 },
+
   secondaryCard: {
     backgroundColor: "#ffffff",
     borderRadius: 24,
     padding: 24,
     marginBottom: 24,
-    borderWidth: 1,
-    borderColor: "#f3f4f6",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
     elevation: 2,
   },
-  cardHeader: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#1f2937",
-    marginBottom: 12,
+  cardHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
   },
-  subText: { color: "#6b7280", marginBottom: 16 },
-  boldBlue: { fontWeight: "bold", color: "#2563eb" },
+  cardHeader: { fontSize: 18, fontWeight: "800", color: "#0f172a" },
+  subText: { color: "#64748b", marginBottom: 24, fontSize: 15 },
+  boldBlue: { fontWeight: "800", color: "#2563eb", fontSize: 16 },
+
+  progressContainer: { marginBottom: 8 },
   progressRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 8,
+    marginBottom: 10,
   },
-  progressLabel: { color: "#4b5563", fontSize: 14 },
-  progressLimit: { color: "#22c55e", fontSize: 14, fontWeight: "bold" },
+  progressLabel: { color: "#475569", fontSize: 13, fontWeight: "600" },
+  progressLimit: { color: "#10b981", fontSize: 13, fontWeight: "bold" },
   progressBarBackground: {
-    height: 12,
-    backgroundColor: "#e5e7eb",
-    borderRadius: 6,
+    height: 10,
+    backgroundColor: "#f1f5f9",
+    borderRadius: 10,
     overflow: "hidden",
   },
-  progressBarFill: { height: "100%", borderRadius: 6 },
+  progressBarFill: { height: "100%", borderRadius: 10 },
+
   cycleInfoCard: {
     flexDirection: "row",
     backgroundColor: "#ffffff",
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#f3f4f6",
+    borderRadius: 24,
+    padding: 20,
     justifyContent: "space-between",
-    elevation: 1,
-    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
+    elevation: 2,
   },
   cycleColumn: { alignItems: "center", flex: 1 },
-  cycleLabel: { color: "#6b7280", fontSize: 14, marginBottom: 4 },
-  cycleValue: { fontSize: 20, fontWeight: "bold", color: "#1f2937" },
-  divider: { width: 1, backgroundColor: "#e5e7eb", marginHorizontal: 16 },
+  cycleIcon: { marginBottom: 8 },
+  cycleLabel: {
+    color: "#64748b",
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  cycleValue: { fontSize: 24, fontWeight: "800", color: "#0f172a" },
+  cycleUnit: { fontSize: 14, fontWeight: "600", color: "#94a3b8" },
+  divider: { width: 1, backgroundColor: "#f1f5f9", marginHorizontal: 12 },
 });

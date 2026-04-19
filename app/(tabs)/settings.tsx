@@ -1,3 +1,4 @@
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React, { useState } from "react";
 import {
@@ -16,97 +17,132 @@ import { updateMeterSettings } from "../../utils/apiClient";
 
 export default function SettingsScreen() {
   const { signOut } = useAuth();
-  const { selectedMeterId } = useMeter(); // معرفة العداد النشط حالياً
+  const { selectedMeterId } = useMeter();
   const queryClient = useQueryClient();
 
-  // متغيرات التخزين للحقول
   const [meterName, setMeterName] = useState("");
   const [customBudget, setCustomBudget] = useState("");
 
-  // إعداد دالة التحديث باستخدام React Query
   const mutation = useMutation({
     mutationFn: () =>
       updateMeterSettings(selectedMeterId, meterName, customBudget),
     onSuccess: () => {
-      Alert.alert("نجاح", "تم تحديث إعدادات العداد بنجاح!");
+      Alert.alert("رائع!", "تم تحديث إعداداتك بنجاح.");
       setMeterName("");
       setCustomBudget("");
-      // السحر: إخبار الداشبورد وشاشة العدادات بأن البيانات القديمة أصبحت منتهية الصلاحية ليجلبوا الجديد فوراً
       queryClient.invalidateQueries({ queryKey: ["userMeters"] });
       queryClient.invalidateQueries({
         queryKey: ["prediction", selectedMeterId],
       });
     },
     onError: () => {
-      Alert.alert("خطأ", "حدث خطأ أثناء تحديث الإعدادات. حاول مجدداً.");
+      Alert.alert("خطأ", "حدث خطأ أثناء الاتصال. يرجى المحاولة لاحقاً.");
     },
   });
 
   const handleUpdate = () => {
     if (!selectedMeterId) {
-      Alert.alert("تنبيه", "الرجاء اختيار عداد أولاً من شاشة العدادات.");
+      Alert.alert("تنبيه", "يرجى اختيار عداد أولاً من شاشة العدادات.");
       return;
     }
     if (!meterName && !customBudget) {
-      Alert.alert("تنبيه", "الرجاء إدخال اسم جديد أو ميزانية جديدة للتعديل.");
+      Alert.alert("تنبيه", "أدخل اسماً جديداً أو ميزانية جديدة للحفظ.");
       return;
     }
     mutation.mutate();
   };
 
   const handleLogout = () => {
-    Alert.alert("تسجيل الخروج", "هل أنت متأكد؟", [
+    Alert.alert("تسجيل الخروج", "هل أنت متأكد من رغبتك بالمغادرة؟", [
       { text: "إلغاء", style: "cancel" },
       { text: "نعم، خروج", onPress: () => signOut(), style: "destructive" },
     ]);
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.header}>
-        <Text style={styles.title}>الإعدادات ⚙️</Text>
+        <Text style={styles.title}>الإعدادات</Text>
+        <Ionicons name="settings-outline" size={32} color="#0f172a" />
       </View>
 
       {/* قسم تعديل العداد */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>تعديل العداد النشط</Text>
+        <View style={styles.sectionHeader}>
+          <MaterialCommunityIcons name="tune" size={22} color="#2563eb" />
+          <Text style={styles.sectionTitle}>تخصيص العداد الحالي</Text>
+        </View>
         <Text style={styles.helperText}>
-          العداد المحدد حالياً: {selectedMeterId || "غير محدد"}
+          العداد المختار: {selectedMeterId || "غير محدد"}
         </Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="اسم العداد الجديد (مثال: عداد المتجر)"
-          value={meterName}
-          onChangeText={setMeterName}
-        />
+        <View style={styles.inputContainer}>
+          <Ionicons
+            name="pricetag-outline"
+            size={20}
+            color="#94a3b8"
+            style={styles.inputIcon}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="اسم مميز للعداد (مثال: منزل العائلة)"
+            placeholderTextColor="#94a3b8"
+            value={meterName}
+            onChangeText={setMeterName}
+          />
+        </View>
 
-        <TextInput
-          style={styles.input}
-          placeholder="الميزانية الجديدة بالليرة السورية (مثال: 250000)"
-          value={customBudget}
-          onChangeText={setCustomBudget}
-          keyboardType="numeric"
-        />
+        <View style={styles.inputContainer}>
+          <Ionicons
+            name="wallet-outline"
+            size={20}
+            color="#94a3b8"
+            style={styles.inputIcon}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="الميزانية بالليرة السورية (مثال: 150000)"
+            placeholderTextColor="#94a3b8"
+            value={customBudget}
+            onChangeText={setCustomBudget}
+            keyboardType="numeric"
+          />
+        </View>
 
         <TouchableOpacity
           style={styles.saveButton}
           onPress={handleUpdate}
           disabled={mutation.isPending}
+          activeOpacity={0.8}
         >
           {mutation.isPending ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.saveButtonText}>حفظ التعديلات</Text>
+            <>
+              <Ionicons name="save-outline" size={20} color="#fff" />
+              <Text style={styles.saveButtonText}>حفظ التعديلات</Text>
+            </>
           )}
         </TouchableOpacity>
       </View>
 
       {/* قسم الحساب */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>الحساب والأمان</Text>
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Text style={styles.logoutText}>تسجيل الخروج</Text>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="shield-checkmark-outline" size={22} color="#ef4444" />
+          <Text style={styles.sectionTitle}>إدارة الحساب</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={handleLogout}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="log-out-outline" size={22} color="#ef4444" />
+          <Text style={styles.logoutText}>تسجيل الخروج من التطبيق</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -114,59 +150,78 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb", padding: 20 },
-  header: { marginTop: 60, marginBottom: 30 },
-  title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#1f2937",
-    textAlign: "left",
+  container: { flex: 1, backgroundColor: "#f8fafc" },
+  scrollContent: { padding: 24, paddingTop: 60, paddingBottom: 40 },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 32,
   },
+  title: { fontSize: 30, fontWeight: "800", color: "#0f172a" },
+
   section: {
     backgroundColor: "#ffffff",
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: "#f3f4f6",
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
     elevation: 2,
-    marginBottom: 20,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#4b5563",
-    marginBottom: 10,
-    textAlign: "left",
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+    gap: 8,
   },
+  sectionTitle: { fontSize: 18, fontWeight: "700", color: "#0f172a" },
   helperText: {
     fontSize: 14,
-    color: "#2563eb",
-    marginBottom: 20,
-    textAlign: "left",
-    fontWeight: "600",
+    color: "#64748b",
+    marginBottom: 24,
+    fontWeight: "500",
   },
-  input: {
-    backgroundColor: "#f3f4f6",
-    borderRadius: 12,
-    padding: 16,
+
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f1f5f9",
+    borderRadius: 16,
     marginBottom: 16,
-    fontSize: 16,
-    color: "#1f2937",
-    textAlign: "left",
+    paddingHorizontal: 16,
   },
+  inputIcon: { marginStart: 12 },
+  input: {
+    flex: 1,
+    paddingVertical: 16,
+    fontSize: 15,
+    color: "#0f172a",
+  },
+
   saveButton: {
-    backgroundColor: "#22c55e",
+    flexDirection: "row",
+    backgroundColor: "#10b981",
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     alignItems: "center",
+    justifyContent: "center",
     marginTop: 8,
+    gap: 8,
   },
-  saveButtonText: { color: "#ffffff", fontSize: 18, fontWeight: "bold" },
+  saveButtonText: { color: "#ffffff", fontSize: 16, fontWeight: "700" },
+
   logoutButton: {
-    backgroundColor: "#fee2e2",
+    flexDirection: "row",
+    backgroundColor: "#fef2f2",
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     alignItems: "center",
+    justifyContent: "center",
+    marginTop: 8,
+    gap: 8,
   },
-  logoutText: { color: "#ef4444", fontSize: 16, fontWeight: "bold" },
+  logoutText: { color: "#ef4444", fontSize: 16, fontWeight: "700" },
 });

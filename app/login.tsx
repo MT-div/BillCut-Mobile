@@ -1,15 +1,18 @@
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  View,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
+  View,
 } from "react-native";
-import { loginUser } from "../utils/apiClient";
 import { useAuth } from "../context/AuthContext";
-import { useRouter } from "expo-router";
+import { loginUser } from "../utils/apiClient";
 
 export default function LoginScreen() {
   const [username, setUsername] = useState("");
@@ -17,12 +20,12 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  const { signIn } = useAuth(); // جلب دالة تسجيل الدخول من المركز
+  const { signIn } = useAuth();
   const router = useRouter();
 
   const handleLogin = async () => {
     if (!username || !password) {
-      setErrorMsg("الرجاء إدخال اسم المستخدم وكلمة المرور");
+      setErrorMsg("يرجى إدخال اسم المستخدم وكلمة المرور للمتابعة.");
       return;
     }
 
@@ -30,113 +33,180 @@ export default function LoginScreen() {
     setErrorMsg("");
 
     try {
-      // 1. إرسال الطلب للسيرفر
       const data = await loginUser(username, password);
-      // 2. السيرفر يرد بنجاح ويعطينا المفتاح (data.access) فنقوم بحفظه
       await signIn(data.access);
-      // 3. توجيه المستخدم فوراً إلى شريط التنقل (الداشبورد)
       router.replace("/(tabs)");
     } catch {
-      setErrorMsg(
-        "بيانات الدخول غير صحيحة، تأكد من اسم المستخدم وكلمة المرور."
-      );
+      setErrorMsg("المعلومات غير صحيحة، يرجى التأكد والمحاولة مرة أخرى.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.container}
+    >
+      <View style={styles.logoContainer}>
+        <View style={styles.iconCircle}>
+          <MaterialCommunityIcons
+            name="lightning-bolt"
+            size={56}
+            color="#2563eb"
+          />
+        </View>
+        <Text style={styles.title}>مرحباً بك في BillCut</Text>
+        <Text style={styles.subtitle}>سجل دخولك للتحكم باستهلاكك الذكي</Text>
+      </View>
+
       <View style={styles.card}>
-        <Text style={styles.title}>تسجيل الدخول</Text>
-        <Text style={styles.subtitle}>أدخل بياناتك للوصول إلى عداداتك ⚡</Text>
+        {errorMsg ? (
+          <View style={styles.errorBox}>
+            <Ionicons name="warning" size={20} color="#ef4444" />
+            <Text style={styles.errorText}>{errorMsg}</Text>
+          </View>
+        ) : null}
 
-        {errorMsg ? <Text style={styles.error}>{errorMsg}</Text> : null}
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>اسم المستخدم</Text>
+          <View style={styles.inputContainer}>
+            <Ionicons
+              name="person-outline"
+              size={20}
+              color="#94a3b8"
+              style={styles.inputIcon}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="أدخل اسم المستخدم الخاص بك"
+              placeholderTextColor="#cbd5e1"
+              value={username}
+              onChangeText={setUsername}
+              autoCapitalize="none"
+            />
+          </View>
+        </View>
 
-        <TextInput
-          style={styles.input}
-          placeholder="اسم المستخدم"
-          value={username}
-          onChangeText={setUsername}
-          autoCapitalize="none"
-        />
-
-        <TextInput
-          style={styles.input}
-          placeholder="كلمة المرور"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>كلمة المرور</Text>
+          <View style={styles.inputContainer}>
+            <Ionicons
+              name="lock-closed-outline"
+              size={20}
+              color="#94a3b8"
+              style={styles.inputIcon}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="أدخل كلمة المرور"
+              placeholderTextColor="#cbd5e1"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+          </View>
+        </View>
 
         <TouchableOpacity
           style={styles.button}
           onPress={handleLogin}
           disabled={loading}
+          activeOpacity={0.8}
         >
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>دخول</Text>
+            <Text style={styles.buttonText}>تسجيل الدخول</Text>
           )}
         </TouchableOpacity>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f9fafb",
+    backgroundColor: "#f8fafc",
     justifyContent: "center",
-    padding: 20,
+    padding: 24,
   },
+
+  logoContainer: { alignItems: "center", marginBottom: 40 },
+  iconCircle: {
+    backgroundColor: "#eff6ff",
+    padding: 20,
+    borderRadius: 100,
+    marginBottom: 20,
+    shadowColor: "#2563eb",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  title: { fontSize: 28, fontWeight: "800", color: "#0f172a", marginBottom: 8 },
+  subtitle: { fontSize: 16, color: "#64748b", fontWeight: "500" },
+
   card: {
     backgroundColor: "#ffffff",
     padding: 24,
     borderRadius: 24,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.05,
+    shadowRadius: 20,
+    elevation: 8,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#1f2937",
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  subtitle: {
-    fontSize: 14,
-    color: "#6b7280",
-    marginBottom: 24,
-    textAlign: "center",
-  },
-  error: {
-    color: "#ef4444",
-    backgroundColor: "#fee2e2",
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 16,
-    textAlign: "center",
-  },
-  input: {
-    backgroundColor: "#f3f4f6",
+
+  errorBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fef2f2",
+    padding: 12,
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    fontSize: 16,
-    color: "#1f2937",
+    marginBottom: 20,
+    gap: 8,
   },
+  errorText: { color: "#ef4444", fontSize: 14, fontWeight: "600", flex: 1 },
+
+  inputGroup: { marginBottom: 20 },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#334155",
+    marginBottom: 8,
+    marginStart: 4,
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f1f5f9",
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  inputIcon: { marginLeft: 12 },
+  input: {
+    flex: 1,
+    paddingVertical: 16,
+    fontSize: 15,
+    color: "#0f172a",
+    textAlign: "right",
+  },
+
   button: {
     backgroundColor: "#2563eb",
-    padding: 16,
-    borderRadius: 12,
+    padding: 18,
+    borderRadius: 16,
     alignItems: "center",
     marginTop: 8,
+    shadowColor: "#2563eb",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  buttonText: { color: "#ffffff", fontSize: 18, fontWeight: "bold" },
+  buttonText: { color: "#ffffff", fontSize: 16, fontWeight: "bold" },
 });
